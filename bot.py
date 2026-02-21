@@ -31,6 +31,8 @@ BOSS_TIMERS = {
     # Normal bosses
     "normal": (12, 9),
 
+    "barakiel": (12, 9),
+
     # Field epics
     "queenant": (24, 4),
     "core": (48, 4),
@@ -137,6 +139,7 @@ async def on_ready():
     await tree.sync()
     reminder_loop.start()
     print(f"Bot ready: {client.user}")
+
 
 
 client.run(TOKEN)
