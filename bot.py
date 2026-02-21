@@ -56,7 +56,6 @@ async def kill(interaction: discord.Interaction, boss: str):
 else:
     # Default to normal boss timer
     fixed_hours, random_hours = (12, 9)
-        )
         return
 
     fixed_hours, random_hours = BOSS_TIMERS[boss_key]
@@ -144,4 +143,5 @@ async def on_ready():
 
 
 client.run(TOKEN)
+
 
