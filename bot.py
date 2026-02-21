@@ -51,10 +51,11 @@ BOSS_TIMERS = {
 async def kill(interaction: discord.Interaction, boss: str):
     boss_key = boss.lower().replace(" ", "")
 
-    if boss_key not in BOSS_TIMERS:
-        await interaction.response.send_message(
-            "Boss not recognized. Check spelling.\n"
-            "Supported: queenant, core, orfen, zaken, baium, antharas, valakas"
+    if boss_key in BOSS_TIMERS:
+    fixed_hours, random_hours = BOSS_TIMERS[boss_key]
+else:
+    # Default to normal boss timer
+    fixed_hours, random_hours = (12, 9)
         )
         return
 
@@ -143,3 +144,4 @@ async def on_ready():
 
 
 client.run(TOKEN)
+
