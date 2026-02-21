@@ -52,20 +52,18 @@ async def kill(interaction: discord.Interaction, boss: str):
     boss_key = boss.lower().replace(" ", "")
 
     if boss_key in BOSS_TIMERS:
-    fixed_hours, random_hours = BOSS_TIMERS[boss_key]
-else:
-    # Default to normal boss timer
-    fixed_hours, random_hours = (12, 9)
-        return
-
-    fixed_hours, random_hours = BOSS_TIMERS[boss_key]
+        fixed_hours, random_hours = BOSS_TIMERS[boss_key]
+    else:
+        fixed_hours, random_hours = (12, 9)
 
     now = datetime.utcnow()
     window_start = now + timedelta(hours=fixed_hours)
     window_end = window_start + timedelta(hours=random_hours)
 
-    c.execute("REPLACE INTO raidboss VALUES (?, ?, ?, 0, 0)",
-              (boss_key, window_start.isoformat(), window_end.isoformat()))
+    c.execute(
+        "REPLACE INTO raidboss VALUES (?, ?, ?, 0, 0)",
+        (boss_key, window_start.isoformat(), window_end.isoformat())
+    )
     conn.commit()
 
     await interaction.response.send_message(
@@ -143,5 +141,6 @@ async def on_ready():
 
 
 client.run(TOKEN)
+
 
 
