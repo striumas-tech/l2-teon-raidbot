@@ -56,13 +56,13 @@ async def kill(interaction: discord.Interaction, boss: str):
     boss_key = boss.lower().replace(" ", "")
     guild_id = str(interaction.guild.id)
 
+    # Determine timer
     if boss_key in BOSS_TIMERS:
         fixed_hours, random_hours = BOSS_TIMERS[boss_key]
     else:
         fixed_hours, random_hours = (12, 9)
 
-    from datetime import timezone
-now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     window_start = now + timedelta(hours=fixed_hours)
     window_end = window_start + timedelta(hours=random_hours)
 
@@ -162,6 +162,7 @@ async def reminder_loop():
 
 
 client.run(TOKEN)
+
 
 
 
