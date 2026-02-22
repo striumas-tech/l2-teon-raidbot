@@ -16,12 +16,16 @@ tree = app_commands.CommandTree(client)
 conn = sqlite3.connect("l2raids.db")
 c = conn.cursor()
 
-c.execute("""CREATE TABLE IF NOT EXISTS raidboss (
-    name TEXT PRIMARY KEY,
+c.execute("DROP TABLE IF EXISTS raidboss")
+
+c.execute("""CREATE TABLE raidboss (
+    guild_id TEXT,
+    name TEXT,
     window_start TEXT,
     window_end TEXT,
     warning_sent INTEGER DEFAULT 0,
-    open_sent INTEGER DEFAULT 0
+    open_sent INTEGER DEFAULT 0,
+    PRIMARY KEY (guild_id, name)
 )""")
 conn.commit()
 
@@ -50,6 +54,7 @@ BOSS_TIMERS = {
 @tree.command(name="kill", description="Register boss kill")
 async def kill(interaction: discord.Interaction, boss: str):
     boss_key = boss.lower().replace(" ", "")
+    guild_id = str(interaction.guild.id)
 
     if boss_key in BOSS_TIMERS:
         fixed_hours, random_hours = BOSS_TIMERS[boss_key]
@@ -61,8 +66,8 @@ async def kill(interaction: discord.Interaction, boss: str):
     window_end = window_start + timedelta(hours=random_hours)
 
     c.execute(
-        "REPLACE INTO raidboss VALUES (?, ?, ?, 0, 0)",
-        (boss_key, window_start.isoformat(), window_end.isoformat())
+        "REPLACE INTO raidboss VALUES (?, ?, ?, ?, 0, 0)",
+        (guild_id, boss_key, window_start.isoformat(), window_end.isoformat())
     )
     conn.commit()
 
@@ -101,41 +106,54 @@ async def reminder_loop():
     await client.wait_until_ready()
     now = datetime.utcnow()
 
-    channel = discord.utils.get(client.get_all_channels(), name="raids")
-    if not channel:
-        return
+    for guild in client.guilds:
+        channel = discord.utils.get(guild.text_channels, name="raids")
+        if not channel:
+            continue
 
-    c.execute("SELECT * FROM raidboss")
-    bosses = c.fetchall()
+        guild_id = str(guild.id)
 
-    for boss in bosses:
-        name, start_str, end_str, warning_sent, open_sent = boss
-        start = datetime.fromisoformat(start_str)
-        end = datetime.fromisoformat(end_str)
+        c.execute("SELECT * FROM raidboss WHERE guild_id=?", (guild_id,))
+        bosses = c.fetchall()
 
-        # 30 minute warning (bulletproof)
-        warning_time = start - timedelta(minutes=30)
+        for boss in bosses:
+            _, name, start_str, end_str, warning_sent, open_sent = boss
+            start = datetime.fromisoformat(start_str)
+            end = datetime.fromisoformat(end_str)
 
-        if not warning_sent and now >= warning_time and now < start:
-            await channel.send(f"⏳ **{name.title()} window opens in 30 minutes!**")
-            c.execute("UPDATE raidboss SET warning_sent=1 WHERE name=?", (name,))
-            conn.commit()
+            warning_time = start - timedelta(minutes=30)
 
-        # Window open
-        if not open_sent and now >= start:
-            await channel.send(f"🔥 **{name.title()} SPAWN WINDOW OPEN!**")
-            c.execute("UPDATE raidboss SET open_sent=1 WHERE name=?", (name,))
-            conn.commit()
+            # 30 minute warning
+            if not warning_sent and now >= warning_time and now < start:
+                await channel.send(f"⏳ **{name.title()} window opens in 30 minutes!**")
+                c.execute(
+                    "UPDATE raidboss SET warning_sent=1 WHERE guild_id=? AND name=?",
+                    (guild_id, name)
+                )
+                conn.commit()
 
-        # Window closed
-        if now >= end:
-            await channel.send(f"❌ **{name.title()} spawn window closed.**")
-            c.execute("DELETE FROM raidboss WHERE name=?", (name,))
-            conn.commit()
+            # Window open
+            if not open_sent and now >= start:
+                await channel.send(f"🔥 **{name.title()} SPAWN WINDOW OPEN!**")
+                c.execute(
+                    "UPDATE raidboss SET open_sent=1 WHERE guild_id=? AND name=?",
+                    (guild_id, name)
+                )
+                conn.commit()
+
+            # Window closed
+            if now >= end:
+                await channel.send(f"❌ **{name.title()} spawn window closed.**")
+                c.execute(
+                    "DELETE FROM raidboss WHERE guild_id=? AND name=?",
+                    (guild_id, name)
+                )
+                conn.commit()
   
 
 
 client.run(TOKEN)
+
 
 
 
