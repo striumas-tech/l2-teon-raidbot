@@ -80,7 +80,9 @@ async def kill(interaction: discord.Interaction, boss: str):
 
 @tree.command(name="raids", description="List active raid windows")
 async def raids(interaction: discord.Interaction):
-    c.execute("SELECT * FROM raidboss")
+    guild_id = str(interaction.guild.id)
+
+    c.execute("SELECT * FROM raidboss WHERE guild_id=?", (guild_id,))
     bosses = c.fetchall()
 
     if not bosses:
@@ -89,10 +91,12 @@ async def raids(interaction: discord.Interaction):
 
     msg = ""
     for boss in bosses:
-        start = datetime.fromisoformat(boss[1])
-        end = datetime.fromisoformat(boss[2])
+        _, name, start_str, end_str, _, _ = boss
+        start = datetime.fromisoformat(start_str)
+        end = datetime.fromisoformat(end_str)
+
         msg += (
-            f"🔥 {boss[0].title()}\n"
+            f"🔥 {name.title()}\n"
             f"   Start: {start.strftime('%Y-%m-%d %H:%M UTC')}\n"
             f"   End: {end.strftime('%Y-%m-%d %H:%M UTC')}\n\n"
         )
@@ -153,6 +157,7 @@ async def reminder_loop():
 
 
 client.run(TOKEN)
+
 
 
 
