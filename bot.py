@@ -61,7 +61,8 @@ async def kill(interaction: discord.Interaction, boss: str):
     else:
         fixed_hours, random_hours = (12, 9)
 
-    now = datetime.utcnow()
+    from datetime import timezone
+now = datetime.now(timezone.utc)
     window_start = now + timedelta(hours=fixed_hours)
     window_end = window_start + timedelta(hours=random_hours)
 
@@ -80,28 +81,32 @@ async def kill(interaction: discord.Interaction, boss: str):
 
 @tree.command(name="raids", description="List active raid windows")
 async def raids(interaction: discord.Interaction):
-    guild_id = str(interaction.guild.id)
+    try:
+        guild_id = str(interaction.guild.id)
 
-    c.execute("SELECT * FROM raidboss WHERE guild_id=?", (guild_id,))
-    bosses = c.fetchall()
+        c.execute("SELECT * FROM raidboss WHERE guild_id=?", (guild_id,))
+        bosses = c.fetchall()
 
-    if not bosses:
-        await interaction.response.send_message("No active raid windows.")
-        return
+        if not bosses:
+            await interaction.response.send_message("No active raid windows.")
+            return
 
-    msg = ""
-    for boss in bosses:
-        _, name, start_str, end_str, _, _ = boss
-        start = datetime.fromisoformat(start_str)
-        end = datetime.fromisoformat(end_str)
+        msg = ""
+        for boss in bosses:
+            _, name, start_str, end_str, _, _ = boss
+            start = datetime.fromisoformat(start_str)
+            end = datetime.fromisoformat(end_str)
 
-        msg += (
-            f"🔥 {name.title()}\n"
-            f"   Start: {start.strftime('%Y-%m-%d %H:%M UTC')}\n"
-            f"   End: {end.strftime('%Y-%m-%d %H:%M UTC')}\n\n"
-        )
+            msg += (
+                f"🔥 {name.title()}\n"
+                f"   Start: {start.strftime('%Y-%m-%d %H:%M UTC')}\n"
+                f"   End: {end.strftime('%Y-%m-%d %H:%M UTC')}\n\n"
+            )
 
-    await interaction.response.send_message(msg)
+        await interaction.response.send_message(msg)
+
+    except Exception as e:
+        await interaction.response.send_message(f"Error: {e}")
 
 # ================= REMINDER LOOP =================
 
@@ -157,6 +162,7 @@ async def reminder_loop():
 
 
 client.run(TOKEN)
+
 
 
 
