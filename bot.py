@@ -113,13 +113,13 @@ async def reminder_loop():
         start = datetime.fromisoformat(start_str)
         end = datetime.fromisoformat(end_str)
 
-        # 30 min warning
-warning_time = start - timedelta(minutes=30)
+        # 30 minute warning (bulletproof)
+        warning_time = start - timedelta(minutes=30)
 
-if not warning_sent and now >= warning_time and now < start:
-    await channel.send(f"⏳ **{name.title()} window opens in 30 minutes!**")
-    c.execute("UPDATE raidboss SET warning_sent=1 WHERE name=?", (name,))
-    conn.commit()
+        if not warning_sent and now >= warning_time and now < start:
+            await channel.send(f"⏳ **{name.title()} window opens in 30 minutes!**")
+            c.execute("UPDATE raidboss SET warning_sent=1 WHERE name=?", (name,))
+            conn.commit()
 
         # Window open
         if not open_sent and now >= start:
@@ -132,17 +132,11 @@ if not warning_sent and now >= warning_time and now < start:
             await channel.send(f"❌ **{name.title()} spawn window closed.**")
             c.execute("DELETE FROM raidboss WHERE name=?", (name,))
             conn.commit()
-
-
-@client.event
-async def on_ready():
-    await tree.sync()
-    reminder_loop.start()
-    print(f"Bot ready: {client.user}")
-
+  
 
 
 client.run(TOKEN)
+
 
 
 
