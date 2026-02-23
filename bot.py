@@ -65,7 +65,7 @@ async def kill(interaction: discord.Interaction, boss: str):
     if boss_key in BOSS_TIMERS:
         fixed_hours, random_hours = BOSS_TIMERS[boss_key]
     else:
-        fixed_hours, random_hours = (12, 9)
+        fixed_hours, random_hours = (0, 1)
 
     now = datetime.utcnow()
     window_start = now + timedelta(hours=fixed_hours)
@@ -248,4 +248,5 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
