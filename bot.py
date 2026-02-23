@@ -205,27 +205,31 @@ async def raids(interaction: discord.Interaction):
 @tasks.loop(seconds=10)
 async def reminder_loop():
     print("Reminder loop tick")
+
     await client.wait_until_ready()
     now = datetime.utcnow()
 
     for guild in client.guilds:
-    channel = guild.get_channel(YOUR_CHANNEL_ID)
 
-    if not channel:
-        continue
+        channel = guild.get_channel(YOUR_CHANNEL_ID)
 
-    guild_id = str(guild.id)
+        if not channel:
+            print("Channel not found in", guild.name)
+            continue
 
-    print("CHECKING GUILD:", guild.name, guild_id)
+        guild_id = str(guild.id)
 
-    c.execute("SELECT * FROM raidboss WHERE guild_id=?", (guild_id,))
-    bosses = c.fetchall()
+        print("CHECKING GUILD:", guild.name, guild_id)
 
-    print("BOSSES FOUND:", bosses)
+        c.execute("SELECT * FROM raidboss WHERE guild_id=?", (guild_id,))
+        bosses = c.fetchall()
 
-    for boss in bosses:
-        _, name, start_str, end_str, warning_sent, open_sent = boss
-        print("DEBUG:", name, warning_sent, open_sent)
+        print("BOSSES FOUND:", bosses)
+
+        for boss in bosses:
+            _, name, start_str, end_str, warning_sent, open_sent = boss
+
+            print("DEBUG:", name, warning_sent, open_sent)
 
             start = datetime.fromisoformat(start_str)
             end = datetime.fromisoformat(end_str)
@@ -262,6 +266,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
