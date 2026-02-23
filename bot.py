@@ -193,7 +193,7 @@ async def reminder_loop():
 
     for guild in client.guilds:
 
-        channel = guild.get_channel(123456789012345678)  # ← PUT YOUR REAL CHANNEL ID HERE
+        channel = guild.get_channel(1474860138471882753)  # ← PUT YOUR REAL CHANNEL ID HERE
 
         if not channel:
             continue
@@ -258,6 +258,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
