@@ -16,9 +16,8 @@ tree = app_commands.CommandTree(client)
 conn = sqlite3.connect("l2raids.db")
 c = conn.cursor()
 
-c.execute("DROP TABLE IF EXISTS raidboss")
-
-c.execute("""CREATE TABLE raidboss (
+c.execute("""
+CREATE TABLE IF NOT EXISTS raidboss (
     guild_id TEXT,
     name TEXT,
     window_start TEXT,
@@ -26,15 +25,13 @@ c.execute("""CREATE TABLE raidboss (
     warning_sent INTEGER DEFAULT 0,
     open_sent INTEGER DEFAULT 0,
     PRIMARY KEY (guild_id, name)
-)""")
+)
+""")
 conn.commit()
 
 # ================= BOSS TIMERS =================
 
 BOSS_TIMERS = {
-    # Normal bosses
-    "normal": (12, 9),
-
     "barakiel": (12, 9),
 
     # Field epics
@@ -49,14 +46,21 @@ BOSS_TIMERS = {
     "valakas": (264, 4),
 }
 
-# ================= RAID COMMAND =================
+# ================= READY EVENT =================
+
+@client.event
+async def on_ready():
+    await tree.sync()
+    print(f"Bot ready: {client.user}")
+    reminder_loop.start()
+
+# ================= /kill =================
 
 @tree.command(name="kill", description="Register boss kill")
 async def kill(interaction: discord.Interaction, boss: str):
     boss_key = boss.lower().replace(" ", "")
     guild_id = str(interaction.guild.id)
 
-    # Determine timer
     if boss_key in BOSS_TIMERS:
         fixed_hours, random_hours = BOSS_TIMERS[boss_key]
     else:
@@ -78,35 +82,116 @@ async def kill(interaction: discord.Interaction, boss: str):
         f"End: {window_end.strftime('%Y-%m-%d %H:%M UTC')}"
     )
 
+# ================= /next =================
 
-@tree.command(name="raids", description="List active raid windows")
+@tree.command(name="next", description="Show countdown for a boss")
+async def next_boss(interaction: discord.Interaction, boss: str):
+    guild_id = str(interaction.guild.id)
+    boss_key = boss.lower().replace(" ", "")
+
+    c.execute(
+        "SELECT * FROM raidboss WHERE guild_id=? AND name=?",
+        (guild_id, boss_key)
+    )
+    boss_data = c.fetchone()
+
+    if not boss_data:
+        await interaction.response.send_message(
+            f"No active timer for {boss.title()}."
+        )
+        return
+
+    _, name, start_str, end_str, _, _ = boss_data
+    start = datetime.fromisoformat(start_str)
+    end = datetime.fromisoformat(end_str)
+    now = datetime.utcnow()
+
+    if now < start:
+        remaining = start - now
+        hours, remainder = divmod(int(remaining.total_seconds()), 3600)
+        minutes = remainder // 60
+
+        await interaction.response.send_message(
+            f"🔥 **{name.title()}**\n\n"
+            f"⏳ Window Opens In: {hours}h {minutes}m"
+        )
+
+    elif start <= now < end:
+        remaining = end - now
+        hours, remainder = divmod(int(remaining.total_seconds()), 3600)
+        minutes = remainder // 60
+
+        await interaction.response.send_message(
+            f"🔥 **{name.title()}**\n\n"
+            f"⚔ **SPAWN WINDOW ACTIVE**\n"
+            f"❌ Closes In: {hours}h {minutes}m"
+        )
+
+    else:
+        await interaction.response.send_message(
+            f"{name.title()} window already closed."
+        )
+
+# ================= /raids DASHBOARD =================
+
+@tree.command(name="raids", description="Show countdown for all active bosses")
 async def raids(interaction: discord.Interaction):
-    try:
-        guild_id = str(interaction.guild.id)
+    guild_id = str(interaction.guild.id)
+    now = datetime.utcnow()
 
-        c.execute("SELECT * FROM raidboss WHERE guild_id=?", (guild_id,))
-        bosses = c.fetchall()
+    c.execute("SELECT * FROM raidboss WHERE guild_id=?", (guild_id,))
+    bosses = c.fetchall()
 
-        if not bosses:
-            await interaction.response.send_message("No active raid windows.")
-            return
+    if not bosses:
+        await interaction.response.send_message("No active raid timers.")
+        return
 
-        msg = ""
-        for boss in bosses:
-            _, name, start_str, end_str, _, _ = boss
-            start = datetime.fromisoformat(start_str)
-            end = datetime.fromisoformat(end_str)
+    boss_list = []
+
+    for boss in bosses:
+        _, name, start_str, end_str, _, _ = boss
+        start = datetime.fromisoformat(start_str)
+        end = datetime.fromisoformat(end_str)
+
+        if now < start:
+            remaining = start - now
+            status = "upcoming"
+            seconds = remaining.total_seconds()
+        elif start <= now < end:
+            remaining = end - now
+            status = "active"
+            seconds = remaining.total_seconds()
+        else:
+            continue
+
+        boss_list.append((seconds, name, start, end, status))
+
+    boss_list.sort(key=lambda x: x[0])
+
+    msg = ""
+
+    for _, name, start, end, status in boss_list:
+        if status == "upcoming":
+            remaining = start - now
+            hours, remainder = divmod(int(remaining.total_seconds()), 3600)
+            minutes = remainder // 60
 
             msg += (
-                f"🔥 {name.title()}\n"
-                f"   Start: {start.strftime('%Y-%m-%d %H:%M UTC')}\n"
-                f"   End: {end.strftime('%Y-%m-%d %H:%M UTC')}\n\n"
+                f"🔥 **{name.title()}**\n"
+                f"⏳ Opens In: {hours}h {minutes}m\n\n"
             )
 
-        await interaction.response.send_message(msg)
+        elif status == "active":
+            remaining = end - now
+            hours, remainder = divmod(int(remaining.total_seconds()), 3600)
+            minutes = remainder // 60
 
-    except Exception as e:
-        await interaction.response.send_message(f"Error: {e}")
+            msg += (
+                f"🔥 **{name.title()}**\n"
+                f"⚔ ACTIVE — Closes In: {hours}h {minutes}m\n\n"
+            )
+
+    await interaction.response.send_message(msg)
 
 # ================= REMINDER LOOP =================
 
@@ -132,7 +217,7 @@ async def reminder_loop():
 
             warning_time = start - timedelta(minutes=30)
 
-            # 30 minute warning
+            # 30 min warning
             if not warning_sent and now >= warning_time and now < start:
                 await channel.send(f"⏳ **{name.title()} window opens in 30 minutes!**")
                 c.execute(
@@ -142,7 +227,7 @@ async def reminder_loop():
                 conn.commit()
 
             # Window open
-            if not open_sent and now >= start:
+            if not open_sent and now >= start and now < end:
                 await channel.send(f"🔥 **{name.title()} SPAWN WINDOW OPEN!**")
                 c.execute(
                     "UPDATE raidboss SET open_sent=1 WHERE guild_id=? AND name=?",
@@ -158,16 +243,7 @@ async def reminder_loop():
                     (guild_id, name)
                 )
                 conn.commit()
-  
 
+# ================= RUN =================
 
 client.run(TOKEN)
-
-
-
-
-
-
-
-
-
