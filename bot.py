@@ -195,7 +195,7 @@ async def reminder_loop():
 
         # Automatically use channel named "raids"
         channel = guild.get_channel(1474860138471882753)
-        if not channel:
+    if not channel:
         continue
 
         guild_id = str(guild.id)
@@ -259,6 +259,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
