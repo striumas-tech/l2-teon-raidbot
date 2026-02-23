@@ -154,6 +154,9 @@ async def raids(interaction: discord.Interaction):
 
     for boss in bosses:
         _, name, start_str, end_str, _, _ = boss
+
+        print("DEBUG:", name, warning_sent, open_sent)
+        
         start = datetime.fromisoformat(start_str)
         end = datetime.fromisoformat(end_str)
 
@@ -252,6 +255,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
