@@ -196,7 +196,7 @@ async def raids(interaction: discord.Interaction):
 
 # ================= REMINDER LOOP =================
 
-@tasks.loop(minutes=1)
+@tasks.loop(seconds=10)
 async def reminder_loop():
     await client.wait_until_ready()
     now = datetime.utcnow()
@@ -248,6 +248,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
