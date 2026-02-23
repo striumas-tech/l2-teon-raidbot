@@ -219,7 +219,7 @@ async def reminder_loop():
             warning_time = start - timedelta(minutes=30)
 
             # 30 min warning
-            if not warning_sent and now >= warning_time and now < start:
+            if not warning_sent and now >= warning_time:
                 await channel.send(f"⏳ **{name.title()} window opens in 30 minutes!**")
                 c.execute(
                     "UPDATE raidboss SET warning_sent=1 WHERE guild_id=? AND name=?",
@@ -248,6 +248,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
