@@ -193,10 +193,10 @@ async def reminder_loop():
 
     for guild in client.guilds:
 
-        # Automatically use channel named "raids"
-        channel = guild.get_channel(1474860138471882753)
-    if not channel:
-        continue
+        channel = guild.get_channel(123456789012345678)  # ← PUT YOUR REAL CHANNEL ID HERE
+
+        if not channel:
+            continue
 
         guild_id = str(guild.id)
 
@@ -211,7 +211,7 @@ async def reminder_loop():
 
             warning_time = start - timedelta(minutes=30)
 
-            # 30 minute warning
+            # 30 min warning
             if not warning_sent and now >= warning_time:
                 try:
                     await channel.send(
@@ -255,10 +255,10 @@ async def reminder_loop():
                     (guild_id, name)
                 )
                 conn.commit()
-
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
