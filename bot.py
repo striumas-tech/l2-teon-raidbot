@@ -52,8 +52,11 @@ BOSS_TIMERS = {
 async def on_ready():
     for guild in client.guilds:
         await tree.sync(guild=guild)
+
     print(f"Bot ready: {client.user}")
-    reminder_loop.start()
+
+    if not reminder_loop.is_running():
+        reminder_loop.start()
 
 # ================= /kill =================
 
@@ -198,6 +201,7 @@ async def raids(interaction: discord.Interaction):
 
 @tasks.loop(seconds=10)
 async def reminder_loop():
+    print("Reminder loop tick")
     await client.wait_until_ready()
     now = datetime.utcnow()
 
@@ -248,6 +252,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
