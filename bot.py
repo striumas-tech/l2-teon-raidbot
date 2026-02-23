@@ -206,7 +206,7 @@ async def reminder_loop():
     now = datetime.utcnow()
 
     for guild in client.guilds:
-        channel = discord.utils.get(guild.text_channels, name="raids")
+        channel = guild.get_channel(1474860138471882753)
         if not channel:
             continue
 
@@ -252,6 +252,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
