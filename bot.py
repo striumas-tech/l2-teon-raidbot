@@ -50,8 +50,13 @@ BOSS_TIMERS = {
 
 @client.event
 async def on_ready():
+    # Clear old global commands
+    await tree.sync(guild=None)
+
+    # Force global sync fresh
     synced = await tree.sync()
-    print(f"Synced {len(synced)} commands")
+
+    print(f"Synced {len(synced)} global commands")
     print(f"Bot ready: {client.user}")
 
     if not reminder_loop.is_running():
@@ -258,6 +263,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
