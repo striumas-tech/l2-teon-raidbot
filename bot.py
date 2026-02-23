@@ -209,17 +209,24 @@ async def reminder_loop():
     now = datetime.utcnow()
 
     for guild in client.guilds:
-        channel = guild.get_channel(1474860138471882753)
-        if not channel:
-            continue
+    channel = guild.get_channel(YOUR_CHANNEL_ID)
 
-        guild_id = str(guild.id)
+    if not channel:
+        continue
 
-        c.execute("SELECT * FROM raidboss WHERE guild_id=?", (guild_id,))
-        bosses = c.fetchall()
+    guild_id = str(guild.id)
 
-        for boss in bosses:
-            _, name, start_str, end_str, warning_sent, open_sent = boss
+    print("CHECKING GUILD:", guild.name, guild_id)
+
+    c.execute("SELECT * FROM raidboss WHERE guild_id=?", (guild_id,))
+    bosses = c.fetchall()
+
+    print("BOSSES FOUND:", bosses)
+
+    for boss in bosses:
+        _, name, start_str, end_str, warning_sent, open_sent = boss
+        print("DEBUG:", name, warning_sent, open_sent)
+
             start = datetime.fromisoformat(start_str)
             end = datetime.fromisoformat(end_str)
 
@@ -255,6 +262,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
