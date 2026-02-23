@@ -211,7 +211,7 @@ async def reminder_loop():
 
     for guild in client.guilds:
 
-        channel = guild.get_channel(YOUR_CHANNEL_ID)
+        channel = guild.get_channel(1474860138471882753)
 
         if not channel:
             print("Channel not found in", guild.name)
@@ -266,6 +266,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
