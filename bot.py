@@ -73,29 +73,28 @@ async def kill(interaction: discord.Interaction, boss: str):
     if boss_key in BOSS_TIMERS:
         fixed_hours, random_hours = BOSS_TIMERS[boss_key]
     else:
-        fixed_hours, random_hours = (12, 9)  # default normal raid
+        fixed_hours, random_hours = (12, 9)
 
     now = datetime.now(timezone.utc)
 
-window_start = now + timedelta(hours=fixed_hours)
-window_end = window_start + timedelta(hours=random_hours)
+    window_start = now + timedelta(hours=fixed_hours)
+    window_end = window_start + timedelta(hours=random_hours)
 
-c.execute(
-    "REPLACE INTO raidboss VALUES (?, ?, ?, ?, 0, 0)",
-    (guild_id, boss_key, window_start.isoformat(), window_end.isoformat())
-)
-conn.commit()
+    c.execute(
+        "REPLACE INTO raidboss VALUES (?, ?, ?, ?, 0, 0)",
+        (guild_id, boss_key, window_start.isoformat(), window_end.isoformat())
+    )
+    conn.commit()
 
-unix_start = int(window_start.timestamp())
-unix_end = int(window_end.timestamp())
+    unix_start = int(window_start.timestamp())
+    unix_end = int(window_end.timestamp())
 
-await interaction.response.send_message(
-    f"🔥 **{boss.title()}** spawn window:\n"
-    f"Start: <t:{unix_start}:F>\n"
-    f"End: <t:{unix_end}:F>\n"
-    f"Opens <t:{unix_start}:R>"
-)
-
+    await interaction.response.send_message(
+        f"🔥 **{boss.title()}** spawn window:\n"
+        f"Start: <t:{unix_start}:F>\n"
+        f"End: <t:{unix_end}:F>\n"
+        f"Opens <t:{unix_start}:R>"
+    )
 # ================= /next =================
 
 @tree.command(name="next", description="Show countdown for a boss")
@@ -275,6 +274,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
