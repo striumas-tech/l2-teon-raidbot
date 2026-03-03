@@ -86,10 +86,14 @@ async def kill(interaction: discord.Interaction, boss: str):
     )
     conn.commit()
 
+        unix_start = int(window_start.timestamp())
+        unix_end = int(window_end.timestamp())
+
     await interaction.response.send_message(
         f"🔥 **{boss.title()}** spawn window:\n"
-        f"Start: {window_start.strftime('%Y-%m-%d %H:%M UTC')}\n"
-        f"End: {window_end.strftime('%Y-%m-%d %H:%M UTC')}"
+        f"Start: <t:{unix_start}:F>\n"
+        f"End: <t:{unix_end}:F>\n"
+        f"Opens <t:{unix_start}:R>"
     )
 
 # ================= /next =================
@@ -171,9 +175,12 @@ async def raids(interaction: discord.Interaction):
             hours, remainder = divmod(int(remaining.total_seconds()), 3600)
             minutes = remainder // 60
 
+            unix_start = int(start.timestamp())
+
             msg += (
                 f"🔥 **{name.title()}**\n"
-                f"⏳ Opens In: {hours}h {minutes}m\n\n"
+                f"⏳ Opens: <t:{unix_start}:F>\n"
+                f"⏱ <t:{unix_start}:R>\n\n"
             )
 
         elif start <= now < end:
@@ -181,9 +188,12 @@ async def raids(interaction: discord.Interaction):
             hours, remainder = divmod(int(remaining.total_seconds()), 3600)
             minutes = remainder // 60
 
+            unix_end = int(end.timestamp())
+
             msg += (
                 f"🔥 **{name.title()}**\n"
-                f"⚔ ACTIVE — Closes In: {hours}h {minutes}m\n\n"
+                f"⚔ ACTIVE — Closes: <t:{unix_end}:F>\n"
+                f"⏱ <t:{unix_end}:R>\n\n"
             )
 
     await interaction.response.send_message(msg)
@@ -235,7 +245,9 @@ async def reminder_loop():
             if not open_sent and start <= now < end:
                 try:
                     await channel.send(
-                        f"🔥 **{name.title()} SPAWN WINDOW OPEN!**"
+                        f"🔥 **{name.title()} SPAWN WINDOW OPEN!**\n"
+                        f"Started: <t:{int(start.timestamp())}:F>\n"
+                        f"(<t:{int(start.timestamp())}:R>)"
                     )
                 except Exception as e:
                     print("Open send failed:", e)
@@ -263,6 +275,7 @@ async def reminder_loop():
 # ================= RUN =================
 
 client.run(TOKEN)
+
 
 
 
