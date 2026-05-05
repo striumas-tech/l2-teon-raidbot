@@ -61,16 +61,25 @@ BOSS_TIMERS = {
 @client.event
 async def on_ready():
     print(f"Bot ready: {client.user}")
-    print("Connected servers:")
 
+    print("Commands loaded:")
+    for cmd in tree.get_commands():
+        print("-", cmd.name)
+
+    print("Connected servers:")
     for guild in client.guilds:
         print(f"- {guild.name} ({guild.id})")
 
         try:
             guild_obj = discord.Object(id=guild.id)
             tree.copy_global_to(guild=guild_obj)
+
             synced = await tree.sync(guild=guild_obj)
-            print(f"Synced {len(synced)} commands to {guild.name}")
+
+            print(f"Synced {len(synced)} commands to {guild.name}:")
+            for cmd in synced:
+                print("-", cmd.name)
+
         except Exception as e:
             print(f"Sync failed for {guild.name}:", e)
 
