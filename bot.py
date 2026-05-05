@@ -60,9 +60,14 @@ BOSS_TIMERS = {
 
 @client.event
 async def on_ready():
-    synced = await tree.sync()
-    print(f"Synced {len(synced)} global commands")
     print(f"Bot ready: {client.user}")
+
+    for guild in client.guilds:
+        try:
+            synced = await tree.sync(guild=guild)
+            print(f"Synced {len(synced)} commands to {guild.name}")
+        except Exception as e:
+            print(f"Sync failed for {guild.name}:", e)
 
     if not reminder_loop.is_running():
         reminder_loop.start()
