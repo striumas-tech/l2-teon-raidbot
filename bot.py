@@ -39,17 +39,20 @@ conn.commit()
 
 # ================= BOSS TIMERS =================
 
+# TEST TIMERS
+# format: boss: (fixed_minutes, random_minutes)
+
 BOSS_TIMERS = {
-    "barakiel": (12, 9),
+    "barakiel": (2, 3),
 
-    "queenant": (24, 4),
-    "core": (48, 4),
-    "orfen": (33, 4),
-    "zaken": (45, 4),
+    "queenant": (2, 3),
+    "core": (2, 3),
+    "orfen": (2, 3),
+    "zaken": (2, 3),
 
-    "baium": (125, 4),
-    "antharas": (192, 4),
-    "valakas": (264, 4),
+    "baium": (2, 3),
+    "antharas": (2, 3),
+    "valakas": (2, 3),
 }
 
 # ================= READY EVENT =================
@@ -101,8 +104,8 @@ async def kill(interaction: discord.Interaction, boss: str):
     fixed_hours, random_hours = BOSS_TIMERS.get(boss_key, (12, 9))
 
     now = datetime.now(timezone.utc)
-    window_start = now + timedelta(hours=fixed_hours)
-    window_end = window_start + timedelta(hours=random_hours)
+    window_start = now + timedelta(minutes=fixed_hours)
+    window_end = window_start + timedelta(minutes=random_hours)
 
     c.execute(
         "REPLACE INTO raidboss VALUES (?, ?, ?, ?, 0, 0)",
@@ -256,7 +259,7 @@ async def reminder_loop():
             start = datetime.fromisoformat(start_str)
             end = datetime.fromisoformat(end_str)
 
-            warning_time = start - timedelta(minutes=30)
+            warning_time = start - timedelta(minutes=1)
 
             # 30 min warning
             if not warning_sent and now >= warning_time and now < start:
