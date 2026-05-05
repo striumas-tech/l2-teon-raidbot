@@ -1,11 +1,42 @@
 import discord
 from discord import app_commands
 from discord.ext import tasks
-import sqlite3
+import asyncpg
 from datetime import datetime, timedelta, timezone
 import os
 
 TOKEN = os.getenv("TOKEN")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+db_pool = None
+
+async def init_db():
+    global db_pool
+
+    db_pool = await asyncpg.create_pool(
+        DATABASE_URL,
+        ssl="require"
+    )
+
+    async with db_pool.acquire() as conn:
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS raidboss (
+                guild_id TEXT,
+                name TEXT,
+                window_start TIMESTAMPTZ NOT NULL,
+                window_end TIMESTAMPTZ NOT NULL,
+                warning_sent BOOLEAN DEFAULT FALSE,
+                open_sent BOOLEAN DEFAULT FALSE,
+                PRIMARY KEY (guild_id, name)
+            );
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS guild_config (
+                guild_id TEXT PRIMARY KEY,
+                channel_id TEXT NOT NULL
+            );
+        """)
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
@@ -60,29 +91,26 @@ BOSS_TIMERS = {
 
 @client.event
 async def on_ready():
+    global db_pool
+
+    # ✅ Initialize database once
+    if db_pool is None:
+        await init_db()
+        print("Database connected")
+
     print(f"Bot ready: {client.user}")
 
-    print("Commands loaded:")
-    for cmd in tree.get_commands():
-        print("-", cmd.name)
-
-    print("Connected servers:")
+    # ✅ Sync commands per server
     for guild in client.guilds:
-        print(f"- {guild.name} ({guild.id})")
-
         try:
             guild_obj = discord.Object(id=guild.id)
             tree.copy_global_to(guild=guild_obj)
-
             synced = await tree.sync(guild=guild_obj)
-
-            print(f"Synced {len(synced)} commands to {guild.name}:")
-            for cmd in synced:
-                print("-", cmd.name)
-
+            print(f"Synced {len(synced)} commands to {guild.name}")
         except Exception as e:
             print(f"Sync failed for {guild.name}:", e)
 
+    # ✅ Start reminder loop
     if not reminder_loop.is_running():
         reminder_loop.start()
 
